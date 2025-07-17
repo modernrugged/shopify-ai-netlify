@@ -6,13 +6,34 @@ const configuration = new Configuration({
 const openai = new OpenAIApi(configuration);
 
 export async function handler(event) {
-  if (event.httpMethod !== "POST") {
-    return { statusCode: 405, body: "Method Not Allowed" };
+  // Handle OPTIONS request for CORS preflight
+  if (event.httpMethod === "OPTIONS") {
+    return {
+      statusCode: 204,
+      headers: {
+        "Access-Control-Allow-Origin": "https://modern-rugged.com/",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type",
+      },
+      body: "",
+    };
   }
 
-  const { messages } = JSON.parse(event.body);
+  if (event.httpMethod !== "POST") {
+    return {
+      statusCode: 405,
+      headers: {
+        "Access-Control-Allow-Origin": "https://modern-rugged.com/",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type",
+      },
+      body: "Method Not Allowed",
+    };
+  }
 
   try {
+    const { messages } = JSON.parse(event.body);
+
     const completion = await openai.createChatCompletion({
       model: "gpt-4o-mini",
       messages,
@@ -20,10 +41,24 @@ export async function handler(event) {
 
     return {
       statusCode: 200,
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "https://modern-rugged.com/",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type",
+      },
       body: JSON.stringify({ reply: completion.data.choices[0].message.content }),
-      headers: { "Content-Type": "application/json" },
     };
   } catch (error) {
-    return { statusCode: 500, body: JSON.stringify({ error: error.message }) };
+    return {
+      statusCode: 500,
+      headers: {
+        "Access-Control-Allow-Origin": "https://modern-rugged.com/",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type",
+      },
+      body: JSON.stringify({ error: error.message }),
+    };
   }
 }
+
